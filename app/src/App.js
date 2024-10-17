@@ -65,7 +65,7 @@ function App() {
             <ul>
                 {leaderboard.map((user, index) => (
                     <li key={index}>
-                        quizId: {user.quizId} - userId: {user.userId} - score: {user.score}
+                        quizId: {user?.quizId} - userId: {user?.userId} - score: {user?.score}
                     </li>
                 ))}
             </ul>

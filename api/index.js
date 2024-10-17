@@ -12,12 +12,6 @@ const redis = require('redis');
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost:27017/quizdb');
 
-// Connect to Redis
-const redisClient = redis.createClient({
-    host: 'localhost',
-    port: 6379
-});
-
 // Define question schema
 const questionSchema = new mongoose.Schema({
     answer: Boolean
@@ -56,18 +50,18 @@ io.on('connection', (socket) => {
                     const user = new User({userId, quizId, score: 0});
                     user.save()
                         .then(_ => {
+                            const existingInLeaderBoard = leaderBoard.some(u => u.userId === userId && u.quizId === quizId);
+                            if (!existingInLeaderBoard) {
+                                leaderBoard.push(user);
+                            }
+                            io.emit('leaderboardUpdate', leaderBoard);
                             socket.emit('joinedQuiz', {message: 'Joined quiz successfully'});
                         })
                         .catch(_ => socket.emit('error', 'Error joining quiz'));
                 } else {
                     socket.emit('joinedQuiz', {message: 'Already joined quiz'});
+                    io.emit('leaderboardUpdate', leaderBoard);
                 }
-
-                const existingInLeaderBoard = leaderBoard.some(u => u.userId === userId && u.quizId === quizId);
-                if (!existingInLeaderBoard) {
-                    leaderBoard.push(user);
-                }
-                io.emit('leaderboardUpdate', leaderBoard);
             })
             .catch(_ => socket.emit('error', 'Error joining quiz'));
     });

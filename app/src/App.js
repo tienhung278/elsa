@@ -21,6 +21,7 @@ function App() {
         });
 
         socket.on('leaderboardUpdate', (data) => {
+            console.log(data);
             setLeaderboard(data);
         });
 
@@ -63,7 +64,9 @@ function App() {
             <h2>Leaderboard:</h2>
             <ul>
                 {leaderboard.map((user, index) => (
-                    <li key={index}>{user}</li>
+                    <li key={index}>
+                        quizId: {user.quizId} - userId: {user.userId} - score: {user.score}
+                    </li>
                 ))}
             </ul>
         </div>

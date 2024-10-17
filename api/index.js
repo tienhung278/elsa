@@ -40,6 +40,8 @@ const userSchema = new mongoose.Schema({
 const Quiz = mongoose.model('Quiz', quizSchema);
 const User = mongoose.model('User', userSchema);
 
+let leaderBoard = [];
+
 // Establish WebSocket connection
 io.on('connection', (socket) => {
     console.log('Client connected');
@@ -60,6 +62,12 @@ io.on('connection', (socket) => {
                 } else {
                     socket.emit('joinedQuiz', {message: 'Already joined quiz'});
                 }
+
+                const existingInLeaderBoard = leaderBoard.some(u => u.userId === userId && u.quizId === quizId);
+                if (!existingInLeaderBoard) {
+                    leaderBoard.push(user);
+                }
+                io.emit('leaderboardUpdate', leaderBoard);
             })
             .catch(_ => socket.emit('error', 'Error joining quiz'));
     });
@@ -84,14 +92,12 @@ io.on('connection', (socket) => {
                             user.score += 1;
                             user.save()
                                 .then(_ => {
-                                    redisClient.get('leaderboard', (err, res) => {
-                                        console.log(res);
-                                    });
-                                    // redisClient.zadd('leaderboard', user.score, userId);
-                                    // io.emit('leaderboardUpdate', redisClient.zrevrange('leaderboard', 0, -1));
+                                    let existingUser = leaderBoard.find(u => u.userId === userId && u.quizId === quizId);
+                                    existingUser.score = user.score;
+                                    io.emit('leaderboardUpdate', leaderBoard);
                                     socket.emit('answerSubmitted', {message: 'Answer submitted successfully', score: user.score});
                                 })
-                                .catch(err => socket.emit('error', 'Error updating score'));
+                                .catch(_ => socket.emit('error', 'Error updating score'));
                         } else {
                             socket.emit('answerSubmitted', {message: 'Incorrect answer', score: user.score});
                         }
